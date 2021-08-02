@@ -108,6 +108,11 @@ class SenderThread(threading.Thread):
 
             time.sleep(0.1)
 
+    def _get_exponential_backoff(self, retry_number, slot_time=0.5):
+        n = 2 ** retry_number - 1
+
+        return slot_time * random.randint(0, n)
+
     def try_send(self, item):
         logger.debug('Trying to send %s', item)
         try:
@@ -115,7 +120,7 @@ class SenderThread(threading.Thread):
                 logger.info('Sent %s', item)
             else:
                 # Send failed, schedule retry
-                delay = 0.75 + 0.5 * random.random()
+                delay = 0.75 + self._get_exponential_backoff(item.attempt)
                 item = item.make_next_attempt(delay)
                 self.queue.put(item)
                 logging.info('Postponed message %s', item)
