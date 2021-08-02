@@ -123,6 +123,8 @@ class SenderThread(threading.Thread):
                 delay = 0.75 + self._get_exponential_backoff(item.attempt)
                 item = item.make_next_attempt(delay)
                 self.queue.put(item)
+                # Sleep till transport will be available
+                time.sleep(1 / self.rate_limiter.bucket_size)
                 logging.info('Postponed message %s', item)
         except Exception as e:
             logger.error('Exception in try_send', e)
